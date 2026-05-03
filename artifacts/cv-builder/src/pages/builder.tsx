@@ -294,6 +294,11 @@ export default function BuilderPage() {
             {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             {!sidebarCollapsed && <span className="text-xs">Collapse</span>}
           </button>
+          {!sidebarCollapsed && (
+            <p className="px-2 pt-1 pb-0.5 text-[10px] text-muted-foreground/60 leading-tight">
+              © 2026 MahiCV.AI<br />All rights reserved.
+            </p>
+          )}
         </div>
       </div>
 
