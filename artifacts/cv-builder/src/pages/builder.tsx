@@ -141,31 +141,33 @@ export default function BuilderPage() {
   /* ── Preview + controls panel (right of drag handle) ── */
   const previewPanel = (
     <div className="flex flex-col h-full">
-      {/* Top bar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b bg-card shrink-0">
-        <Tabs
-          value={rightTab}
-          onValueChange={(v) => setRightTab(v as typeof rightTab)}
-          className="flex-1 min-w-0"
-        >
-          <TabsList className="h-8 flex-wrap gap-0.5">
-            <TabsTrigger value="preview"    className="text-xs h-7 gap-1 px-2.5">
-              <FileText  className="h-3.5 w-3.5" /><span>Preview</span>
-            </TabsTrigger>
-            <TabsTrigger value="templates"  className="text-xs h-7 gap-1 px-2.5">
-              <LayoutGrid className="h-3.5 w-3.5" /><span>Templates</span>
-            </TabsTrigger>
-            <TabsTrigger value="sections"   className="text-xs h-7 gap-1 px-2.5">
-              <Settings2  className="h-3.5 w-3.5" /><span>Sections</span>
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="text-xs h-7 gap-1 px-2.5">
-              <Star       className="h-3.5 w-3.5" /><span>Style</span>
-            </TabsTrigger>
-            <TabsTrigger value="score"      className="text-xs h-7 gap-1 px-2.5">
-              <BarChart3  className="h-3.5 w-3.5" /><span>Score</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Top bar — single scrollable row, never wraps */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b bg-card shrink-0 min-w-0">
+        {/* Scrollable tab strip */}
+        <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none">
+          <Tabs
+            value={rightTab}
+            onValueChange={(v) => setRightTab(v as typeof rightTab)}
+          >
+            <TabsList className="h-8 inline-flex flex-nowrap whitespace-nowrap w-max gap-0.5">
+              <TabsTrigger value="preview"    className="text-xs h-7 gap-1 px-2.5 shrink-0">
+                <FileText   className="h-3.5 w-3.5" /><span>Preview</span>
+              </TabsTrigger>
+              <TabsTrigger value="templates"  className="text-xs h-7 gap-1 px-2.5 shrink-0">
+                <LayoutGrid className="h-3.5 w-3.5" /><span>Templates</span>
+              </TabsTrigger>
+              <TabsTrigger value="sections"   className="text-xs h-7 gap-1 px-2.5 shrink-0">
+                <Settings2  className="h-3.5 w-3.5" /><span>Sections</span>
+              </TabsTrigger>
+              <TabsTrigger value="appearance" className="text-xs h-7 gap-1 px-2.5 shrink-0">
+                <Star       className="h-3.5 w-3.5" /><span>Style</span>
+              </TabsTrigger>
+              <TabsTrigger value="score"      className="text-xs h-7 gap-1 px-2.5 shrink-0">
+                <BarChart3  className="h-3.5 w-3.5" /><span>Score</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
         <Button
           size="sm"
           className="h-8 gap-1.5 text-xs shrink-0"
