@@ -53,6 +53,21 @@ type EditorSection =
   | "languages"
   | "custom";
 
+/* Defined OUTSIDE BuilderPage so React never remounts it on re-render */
+function EditorContent({ section }: { section: EditorSection }) {
+  switch (section) {
+    case "personal":       return <PersonalEditor />;
+    case "experience":     return <ExperienceEditor />;
+    case "education":      return <EducationEditor />;
+    case "skills":         return <SkillsEditor />;
+    case "projects":       return <ProjectsEditor />;
+    case "certifications": return <CertificationsEditor />;
+    case "achievements":   return <AchievementsEditor />;
+    case "languages":      return <LanguagesEditor />;
+    case "custom":         return <CustomSectionsEditor />;
+  }
+}
+
 const EDITOR_SECTIONS: { id: EditorSection; label: string; icon: React.ReactNode }[] = [
   { id: "personal",       label: "Personal",       icon: <User className="h-4 w-4" /> },
   { id: "experience",     label: "Experience",     icon: <Briefcase className="h-4 w-4" /> },
@@ -105,20 +120,6 @@ export default function BuilderPage() {
     }
   };
 
-  const EditorContent = () => {
-    switch (activeSection) {
-      case "personal":       return <PersonalEditor />;
-      case "experience":     return <ExperienceEditor />;
-      case "education":      return <EducationEditor />;
-      case "skills":         return <SkillsEditor />;
-      case "projects":       return <ProjectsEditor />;
-      case "certifications": return <CertificationsEditor />;
-      case "achievements":   return <AchievementsEditor />;
-      case "languages":      return <LanguagesEditor />;
-      case "custom":         return <CustomSectionsEditor />;
-    }
-  };
-
   /* ── Editor panel (left of drag handle) ── */
   const editorPanel = (
     <div className="flex flex-col h-full bg-card border-r">
@@ -132,7 +133,7 @@ export default function BuilderPage() {
       </div>
       <ScrollArea className="flex-1">
         <div className="p-4">
-          <EditorContent />
+          <EditorContent section={activeSection} />
         </div>
       </ScrollArea>
     </div>
