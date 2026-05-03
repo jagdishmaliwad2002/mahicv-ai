@@ -8,3 +8,56 @@
 export interface HealthStatus {
   status: string;
 }
+
+export type GenerateSummaryRequestTone =
+  (typeof GenerateSummaryRequestTone)[keyof typeof GenerateSummaryRequestTone];
+
+export const GenerateSummaryRequestTone = {
+  professional: "professional",
+  creative: "creative",
+  technical: "technical",
+  executive: "executive",
+} as const;
+
+export interface GenerateSummaryRequest {
+  name: string;
+  currentRole?: string;
+  skills?: string[];
+  experience?: string[];
+  education?: string;
+  tone?: GenerateSummaryRequestTone;
+}
+
+export interface GenerateSummaryResponse {
+  summary: string;
+}
+
+export interface ResumeScoreRequest {
+  hasPhoto?: boolean;
+  hasSummary?: boolean;
+  skillsCount: number;
+  experienceCount: number;
+  educationCount: number;
+  hasProjects?: boolean;
+  hasCertifications?: boolean;
+  hasLanguages?: boolean;
+  summaryLength?: number;
+}
+
+export type ResumeScoreResponseLevel =
+  (typeof ResumeScoreResponseLevel)[keyof typeof ResumeScoreResponseLevel];
+
+export const ResumeScoreResponseLevel = {
+  poor: "poor",
+  fair: "fair",
+  good: "good",
+  excellent: "excellent",
+} as const;
+
+export interface ResumeScoreResponse {
+  /** Score from 0 to 100 */
+  score: number;
+  level: ResumeScoreResponseLevel;
+  feedback: string[];
+  suggestions: string[];
+}

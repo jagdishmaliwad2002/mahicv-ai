@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: ai
+    description: AI-powered CV features
 paths:
   /healthz:
     get:
@@ -24,6 +26,47 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /ai/generate-summary:
+    post:
+      operationId: generateSummary
+      tags: [ai]
+      summary: Generate AI professional summary
+      description: Generate a professional CV summary based on user's CV data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateSummaryRequest"
+      responses:
+        "200":
+          description: Generated summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateSummaryResponse"
+
+  /ai/resume-score:
+    post:
+      operationId: getResumeScore
+      tags: [ai]
+      summary: Calculate resume score
+      description: Analyze and score the resume based on completeness and quality
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResumeScoreRequest"
+      responses:
+        "200":
+          description: Resume score and feedback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumeScoreResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +77,82 @@ components:
       required:
         - status
 
+    GenerateSummaryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        currentRole:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        experience:
+          type: array
+          items:
+            type: string
+        education:
+          type: string
+        tone:
+          type: string
+          enum: [professional, creative, technical, executive]
+      required:
+        - name
+
+    GenerateSummaryResponse:
+      type: object
+      properties:
+        summary:
+          type: string
+      required:
+        - summary
+
+    ResumeScoreRequest:
+      type: object
+      properties:
+        hasPhoto:
+          type: boolean
+        hasSummary:
+          type: boolean
+        skillsCount:
+          type: integer
+        experienceCount:
+          type: integer
+        educationCount:
+          type: integer
+        hasProjects:
+          type: boolean
+        hasCertifications:
+          type: boolean
+        hasLanguages:
+          type: boolean
+        summaryLength:
+          type: integer
+      required:
+        - skillsCount
+        - experienceCount
+        - educationCount
+
+    ResumeScoreResponse:
+      type: object
+      properties:
+        score:
+          type: integer
+          description: Score from 0 to 100
+        level:
+          type: string
+          enum: [poor, fair, good, excellent]
+        feedback:
+          type: array
+          items:
+            type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+      required:
+        - score
+        - level
+        - feedback
+        - suggestions

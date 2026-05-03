@@ -5,18 +5,27 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  GenerateSummaryRequest,
+  GenerateSummaryResponse,
+  HealthStatus,
+  ResumeScoreRequest,
+  ResumeScoreResponse,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -99,3 +108,177 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Generate a professional CV summary based on user's CV data
+ * @summary Generate AI professional summary
+ */
+export const getGenerateSummaryUrl = () => {
+  return `/api/ai/generate-summary`;
+};
+
+export const generateSummary = async (
+  generateSummaryRequest: GenerateSummaryRequest,
+  options?: RequestInit,
+): Promise<GenerateSummaryResponse> => {
+  return customFetch<GenerateSummaryResponse>(getGenerateSummaryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generateSummaryRequest),
+  });
+};
+
+export const getGenerateSummaryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateSummary>>,
+    TError,
+    { data: BodyType<GenerateSummaryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateSummary>>,
+  TError,
+  { data: BodyType<GenerateSummaryRequest> },
+  TContext
+> => {
+  const mutationKey = ["generateSummary"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateSummary>>,
+    { data: BodyType<GenerateSummaryRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateSummary(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateSummaryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateSummary>>
+>;
+export type GenerateSummaryMutationBody = BodyType<GenerateSummaryRequest>;
+export type GenerateSummaryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate AI professional summary
+ */
+export const useGenerateSummary = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateSummary>>,
+    TError,
+    { data: BodyType<GenerateSummaryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateSummary>>,
+  TError,
+  { data: BodyType<GenerateSummaryRequest> },
+  TContext
+> => {
+  return useMutation(getGenerateSummaryMutationOptions(options));
+};
+
+/**
+ * Analyze and score the resume based on completeness and quality
+ * @summary Calculate resume score
+ */
+export const getGetResumeScoreUrl = () => {
+  return `/api/ai/resume-score`;
+};
+
+export const getResumeScore = async (
+  resumeScoreRequest: ResumeScoreRequest,
+  options?: RequestInit,
+): Promise<ResumeScoreResponse> => {
+  return customFetch<ResumeScoreResponse>(getGetResumeScoreUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resumeScoreRequest),
+  });
+};
+
+export const getGetResumeScoreMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getResumeScore>>,
+    TError,
+    { data: BodyType<ResumeScoreRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getResumeScore>>,
+  TError,
+  { data: BodyType<ResumeScoreRequest> },
+  TContext
+> => {
+  const mutationKey = ["getResumeScore"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getResumeScore>>,
+    { data: BodyType<ResumeScoreRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return getResumeScore(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetResumeScoreMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getResumeScore>>
+>;
+export type GetResumeScoreMutationBody = BodyType<ResumeScoreRequest>;
+export type GetResumeScoreMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Calculate resume score
+ */
+export const useGetResumeScore = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getResumeScore>>,
+    TError,
+    { data: BodyType<ResumeScoreRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof getResumeScore>>,
+  TError,
+  { data: BodyType<ResumeScoreRequest> },
+  TContext
+> => {
+  return useMutation(getGetResumeScoreMutationOptions(options));
+};

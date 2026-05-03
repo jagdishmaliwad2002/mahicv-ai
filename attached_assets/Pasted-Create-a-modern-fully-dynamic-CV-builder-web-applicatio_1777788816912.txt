@@ -1,0 +1,96 @@
+Create a modern, fully dynamic CV builder web application using Next.js (App Router), TypeScript, Tailwind CSS, and server-side rendering where needed.
+
+Core Requirements:
+
+* Build a responsive UI with a clean, premium look similar to Canva or Resume.io
+* Use modular component-based architecture
+
+Features:
+
+1. Dynamic Form Input System:
+
+   * Personal Details (Name, Email, Phone, Location, Website, LinkedIn, GitHub)
+   * Profile Summary
+   * Skills (with levels dropdown: Beginner, Intermediate, Advanced)
+   * Work Experience (company, role, duration, description)
+   * Education
+   * Projects
+   * Certifications
+   * Achievements
+   * Languages
+   * Custom Sections (user-defined)
+
+2. Dropdown + Dynamic UI:
+
+   * Add/remove multiple entries dynamically
+   * Drag-and-drop reordering
+   * Dropdown selectors for:
+
+     * Skill level
+     * CV template
+     * Color theme
+     * Font style
+
+3. Live Preview:
+
+   * Real-time CV preview panel
+   * Split screen (form left, preview right)
+   * Instant updates on typing
+
+4. Templates:
+
+   * Provide 5–10 premium resume templates
+   * Minimal, Modern, Creative, Professional, Developer-style
+   * Template switching without data loss
+
+5. Editing:
+
+   * User can edit any field anytime
+   * Auto-save in local storage
+
+6. Export:
+
+   * Generate downloadable PDF
+   * Use html2pdf or Puppeteer for high-quality output
+
+7. Authentication (Optional):
+
+   * Login with Google/GitHub
+   * Save multiple resumes per user
+
+8. Backend:
+
+   * Use Prisma with SQLite (local) or PostgreSQL (production free-tier)
+   * Store user resumes
+
+9. Performance:
+
+   * Optimize for fast load
+   * Use lazy loading and SSR where needed
+
+10. Deployment:
+
+* Deploy on Vercel (frontend)
+* Optional backend on Render (free tier)
+
+UI Requirements:
+
+* Modern glassmorphism or minimal UI
+* Smooth animations using Framer Motion
+* Sidebar navigation for sections
+* Clean typography and spacing
+
+Extra Features:
+
+* Dark/Light mode toggle
+* AI-generated summary suggestion button
+* Resume score checker (basic logic)
+* Download without watermark
+
+Output:
+
+* Full working code structure
+* Folder structure
+* Components and pages
+* API routes
+* PDF generation logic

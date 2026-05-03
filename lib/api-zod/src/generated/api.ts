@@ -14,3 +14,45 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Generate a professional CV summary based on user's CV data
+ * @summary Generate AI professional summary
+ */
+export const GenerateSummaryBody = zod.object({
+  name: zod.string(),
+  currentRole: zod.string().optional(),
+  skills: zod.array(zod.string()).optional(),
+  experience: zod.array(zod.string()).optional(),
+  education: zod.string().optional(),
+  tone: zod
+    .enum(["professional", "creative", "technical", "executive"])
+    .optional(),
+});
+
+export const GenerateSummaryResponse = zod.object({
+  summary: zod.string(),
+});
+
+/**
+ * Analyze and score the resume based on completeness and quality
+ * @summary Calculate resume score
+ */
+export const GetResumeScoreBody = zod.object({
+  hasPhoto: zod.boolean().optional(),
+  hasSummary: zod.boolean().optional(),
+  skillsCount: zod.number(),
+  experienceCount: zod.number(),
+  educationCount: zod.number(),
+  hasProjects: zod.boolean().optional(),
+  hasCertifications: zod.boolean().optional(),
+  hasLanguages: zod.boolean().optional(),
+  summaryLength: zod.number().optional(),
+});
+
+export const GetResumeScoreResponse = zod.object({
+  score: zod.number().describe("Score from 0 to 100"),
+  level: zod.enum(["poor", "fair", "good", "excellent"]),
+  feedback: zod.array(zod.string()),
+  suggestions: zod.array(zod.string()),
+});
