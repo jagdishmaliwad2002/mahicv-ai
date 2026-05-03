@@ -134,7 +134,7 @@ export default function BuilderPage() {
             <FileText className="h-4 w-4 text-primary-foreground" />
           </div>
           {!sidebarCollapsed && (
-            <span className="font-semibold text-sm tracking-tight">CV Builder</span>
+            <span className="font-semibold text-sm tracking-tight">MahiCV<span className="text-primary">.AI</span></span>
           )}
         </div>
 
