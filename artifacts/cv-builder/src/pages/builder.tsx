@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useCVStore } from "../store/cv-store";
 import CVPreview from "../components/templates/CVPreview";
@@ -38,9 +38,12 @@ import {
   FileText,
   ChevronRight,
   ChevronLeft,
+  PenLine,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "../lib/utils";
+
+/* ─── Types ─────────────────────────────────────────────── */
 
 type EditorSection =
   | "personal"
@@ -53,7 +56,24 @@ type EditorSection =
   | "languages"
   | "custom";
 
-/* Defined OUTSIDE BuilderPage so React never remounts it on re-render */
+type MobileTab = "edit" | "preview" | "templates" | "sections" | "appearance" | "score";
+
+/* ─── Static data ────────────────────────────────────────── */
+
+const EDITOR_SECTIONS: { id: EditorSection; label: string; icon: React.ReactNode }[] = [
+  { id: "personal",       label: "Personal",       icon: <User className="h-4 w-4" /> },
+  { id: "experience",     label: "Experience",     icon: <Briefcase className="h-4 w-4" /> },
+  { id: "education",      label: "Education",      icon: <GraduationCap className="h-4 w-4" /> },
+  { id: "skills",         label: "Skills",         icon: <Star className="h-4 w-4" /> },
+  { id: "projects",       label: "Projects",       icon: <Code2 className="h-4 w-4" /> },
+  { id: "certifications", label: "Certifications", icon: <Award className="h-4 w-4" /> },
+  { id: "achievements",   label: "Achievements",   icon: <Trophy className="h-4 w-4" /> },
+  { id: "languages",      label: "Languages",      icon: <Globe className="h-4 w-4" /> },
+  { id: "custom",         label: "Custom",         icon: <FileText className="h-4 w-4" /> },
+];
+
+/* ─── Stable editor switcher (outside page = no remounts) ─── */
+
 function EditorContent({ section }: { section: EditorSection }) {
   switch (section) {
     case "personal":       return <PersonalEditor />;
@@ -68,24 +88,96 @@ function EditorContent({ section }: { section: EditorSection }) {
   }
 }
 
-const EDITOR_SECTIONS: { id: EditorSection; label: string; icon: React.ReactNode }[] = [
-  { id: "personal",       label: "Personal",       icon: <User className="h-4 w-4" /> },
-  { id: "experience",     label: "Experience",     icon: <Briefcase className="h-4 w-4" /> },
-  { id: "education",      label: "Education",      icon: <GraduationCap className="h-4 w-4" /> },
-  { id: "skills",         label: "Skills",         icon: <Star className="h-4 w-4" /> },
-  { id: "projects",       label: "Projects",       icon: <Code2 className="h-4 w-4" /> },
-  { id: "certifications", label: "Certifications", icon: <Award className="h-4 w-4" /> },
-  { id: "achievements",   label: "Achievements",   icon: <Trophy className="h-4 w-4" /> },
-  { id: "languages",      label: "Languages",      icon: <Globe className="h-4 w-4" /> },
-  { id: "custom",         label: "Custom",         icon: <FileText className="h-4 w-4" /> },
-];
+/* ─── Shared right-panel content ────────────────────────── */
+
+function RightPanelContent({
+  tab, cv, previewRef,
+}: {
+  tab: string;
+  cv: ReturnType<typeof useCVStore>["cv"];
+  previewRef: React.RefObject<HTMLDivElement>;
+}) {
+  if (tab === "preview") {
+    return (
+      <div className="flex justify-center items-start p-6 min-h-full">
+        <div
+          className="bg-white shadow-2xl rounded-sm"
+          style={{
+            width: "210mm",
+            minHeight: "297mm",
+            transform: "scale(0.72)",
+            transformOrigin: "top center",
+            marginBottom: "calc((0.72 - 1) * 297mm)",
+          }}
+        >
+          <CVPreview cv={cv} previewRef={previewRef} />
+        </div>
+      </div>
+    );
+  }
+  if (tab === "templates") {
+    return (
+      <div className="p-4 md:p-6 max-w-2xl">
+        <h3 className="text-sm font-semibold mb-4">Choose Template</h3>
+        <TemplateSelector />
+      </div>
+    );
+  }
+  if (tab === "sections") {
+    return (
+      <div className="p-4 md:p-6 max-w-lg">
+        <h3 className="text-sm font-semibold mb-1">Section Order & Visibility</h3>
+        <p className="text-xs text-muted-foreground mb-4">Drag to reorder · Toggle to show/hide</p>
+        <SectionsManager />
+      </div>
+    );
+  }
+  if (tab === "appearance") {
+    return (
+      <div className="p-4 md:p-6 max-w-sm">
+        <h3 className="text-sm font-semibold mb-4">Appearance</h3>
+        <AppearanceSettings />
+      </div>
+    );
+  }
+  if (tab === "score") {
+    return (
+      <div className="p-4 md:p-6 max-w-sm">
+        <h3 className="text-sm font-semibold mb-1">Resume Score</h3>
+        <p className="text-xs text-muted-foreground mb-4">AI feedback on how strong your CV is</p>
+        <ResumeScore />
+      </div>
+    );
+  }
+  return null;
+}
+
+/* ─── Hook: detect mobile ────────────────────────────────── */
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < breakpoint : false
+  );
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
+/* ─── Page ───────────────────────────────────────────────── */
 
 export default function BuilderPage() {
   const { cv, resetCV } = useCVStore();
   const { theme, setTheme } = useTheme();
   const previewRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+
+  /* shared state */
   const [activeSection, setActiveSection] = useState<EditorSection>("personal");
-  const [rightTab, setRightTab] = useState<"preview" | "templates" | "sections" | "appearance" | "score">("preview");
+  const [rightTab, setRightTab] = useState<string>("preview");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("edit");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -120,7 +212,119 @@ export default function BuilderPage() {
     }
   };
 
-  /* ── Editor panel (left of drag handle) ── */
+  /* ════════════════════════════════════════════
+     MOBILE LAYOUT
+  ════════════════════════════════════════════ */
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
+
+        {/* ── Top header ── */}
+        <div className="flex items-center justify-between px-3 py-2.5 border-b bg-card shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
+              <FileText className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="font-semibold text-sm tracking-tight">
+              MahiCV<span className="text-primary">.AI</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={handleReset}
+              className="p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+            <Button
+              size="sm"
+              className="h-8 gap-1 text-xs"
+              onClick={handleExport}
+              disabled={exporting}
+            >
+              <Download className="h-3.5 w-3.5" />
+              {exporting ? "…" : "PDF"}
+            </Button>
+          </div>
+        </div>
+
+        {/* ── Section sub-nav (only in edit mode) ── */}
+        {mobileTab === "edit" && (
+          <div className="shrink-0 border-b bg-card overflow-x-auto scrollbar-none">
+            <div className="flex gap-1 px-3 py-2 w-max">
+              {EDITOR_SECTIONS.map((sec) => (
+                <button
+                  key={sec.id}
+                  onClick={() => setActiveSection(sec.id)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+                    activeSection === sec.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  {sec.icon}
+                  {sec.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Main scrollable content ── */}
+        <div className="flex-1 overflow-auto">
+          {mobileTab === "edit" ? (
+            <div className="p-4">
+              <EditorContent section={activeSection} />
+            </div>
+          ) : (
+            <RightPanelContent tab={mobileTab} cv={cv} previewRef={previewRef as React.RefObject<HTMLDivElement>} />
+          )}
+        </div>
+
+        {/* ── Bottom tab bar ── */}
+        <div className="shrink-0 border-t bg-card safe-area-bottom">
+          <div className="flex items-stretch">
+            {(
+              [
+                { id: "edit",       label: "Edit",      icon: <PenLine    className="h-5 w-5" /> },
+                { id: "preview",    label: "Preview",   icon: <FileText   className="h-5 w-5" /> },
+                { id: "templates",  label: "Templates", icon: <LayoutGrid className="h-5 w-5" /> },
+                { id: "sections",   label: "Sections",  icon: <Settings2  className="h-5 w-5" /> },
+                { id: "appearance", label: "Style",     icon: <Star       className="h-5 w-5" /> },
+                { id: "score",      label: "Score",     icon: <BarChart3  className="h-5 w-5" /> },
+              ] as { id: MobileTab; label: string; icon: React.ReactNode }[]
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setMobileTab(tab.id)}
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
+                  mobileTab === tab.id
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ════════════════════════════════════════════
+     DESKTOP LAYOUT
+  ════════════════════════════════════════════ */
+
   const editorPanel = (
     <div className="flex flex-col h-full bg-card border-r">
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
@@ -139,17 +343,12 @@ export default function BuilderPage() {
     </div>
   );
 
-  /* ── Preview + controls panel (right of drag handle) ── */
   const previewPanel = (
     <div className="flex flex-col h-full">
       {/* Top bar — single scrollable row, never wraps */}
       <div className="flex items-center gap-2 px-3 py-2 border-b bg-card shrink-0 min-w-0">
-        {/* Scrollable tab strip */}
         <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none">
-          <Tabs
-            value={rightTab}
-            onValueChange={(v) => setRightTab(v as typeof rightTab)}
-          >
+          <Tabs value={rightTab} onValueChange={setRightTab}>
             <TabsList className="h-8 inline-flex flex-nowrap whitespace-nowrap w-max gap-0.5">
               <TabsTrigger value="preview"    className="text-xs h-7 gap-1 px-2.5 shrink-0">
                 <FileText   className="h-3.5 w-3.5" /><span>Preview</span>
@@ -179,51 +378,8 @@ export default function BuilderPage() {
           {exporting ? "Exporting…" : "Export PDF"}
         </Button>
       </div>
-
-      {/* Content */}
       <div className="flex-1 overflow-auto bg-muted/30">
-        {rightTab === "preview" && (
-          <div className="flex justify-center items-start p-8 min-h-full">
-            <div
-              className="bg-white shadow-2xl rounded-sm"
-              style={{
-                width: "210mm",
-                minHeight: "297mm",
-                transform: "scale(0.72)",
-                transformOrigin: "top center",
-                marginBottom: "calc((0.72 - 1) * 297mm)",
-              }}
-            >
-              <CVPreview cv={cv} previewRef={previewRef as React.RefObject<HTMLDivElement>} />
-            </div>
-          </div>
-        )}
-        {rightTab === "templates" && (
-          <div className="p-6 max-w-2xl">
-            <h3 className="text-sm font-semibold mb-4">Choose Template</h3>
-            <TemplateSelector />
-          </div>
-        )}
-        {rightTab === "sections" && (
-          <div className="p-6 max-w-lg">
-            <h3 className="text-sm font-semibold mb-1">Section Order & Visibility</h3>
-            <p className="text-xs text-muted-foreground mb-4">Drag to reorder · Toggle to show/hide</p>
-            <SectionsManager />
-          </div>
-        )}
-        {rightTab === "appearance" && (
-          <div className="p-6 max-w-sm">
-            <h3 className="text-sm font-semibold mb-4">Appearance</h3>
-            <AppearanceSettings />
-          </div>
-        )}
-        {rightTab === "score" && (
-          <div className="p-6 max-w-sm">
-            <h3 className="text-sm font-semibold mb-1">Resume Score</h3>
-            <p className="text-xs text-muted-foreground mb-4">AI feedback on how strong your CV is</p>
-            <ResumeScore />
-          </div>
-        )}
+        <RightPanelContent tab={rightTab} cv={cv} previewRef={previewRef as React.RefObject<HTMLDivElement>} />
       </div>
     </div>
   );
@@ -231,14 +387,13 @@ export default function BuilderPage() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
 
-      {/* ── Fixed icon sidebar ── */}
+      {/* ── Desktop sidebar ── */}
       <div
         className={cn(
           "flex flex-col border-r bg-sidebar transition-all duration-200 shrink-0 h-full",
           sidebarCollapsed ? "w-14" : "w-48"
         )}
       >
-        {/* Brand */}
         <div className="flex items-center gap-2 px-3 py-4 border-b shrink-0">
           <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
             <FileText className="h-4 w-4 text-primary-foreground" />
@@ -250,7 +405,6 @@ export default function BuilderPage() {
           )}
         </div>
 
-        {/* Nav */}
         <ScrollArea className="flex-1 py-2">
           <nav className="px-2 space-y-1">
             {EDITOR_SECTIONS.map((sec) => (
@@ -272,7 +426,6 @@ export default function BuilderPage() {
           </nav>
         </ScrollArea>
 
-        {/* Bottom */}
         <div className="border-t p-2 space-y-1 shrink-0">
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
