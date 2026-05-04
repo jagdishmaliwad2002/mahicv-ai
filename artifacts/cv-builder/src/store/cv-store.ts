@@ -39,6 +39,7 @@ interface CVStore {
   setAccentColor: (color: string) => void;
   setFontSize: (size: number) => void;
   resetCV: () => void;
+  restoreCV: (cv: CVData) => void;
 }
 
 export const useCVStore = create<CVStore>()(
@@ -259,6 +260,8 @@ export const useCVStore = create<CVStore>()(
         set((s) => ({ cv: { ...s.cv, fontSize } })),
 
       resetCV: () => set({ cv: DEFAULT_CV }),
+
+  restoreCV: (cv) => set({ cv }),
     }),
     { name: "cv-builder-data" }
   )
