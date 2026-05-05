@@ -21,6 +21,19 @@ A fully featured, browser-based CV builder with live split-screen preview, 7 pre
 | **Mobile-Friendly** | Fully responsive — native-app style bottom tab bar on phones |
 | **Safe Reset** | Confirmation dialog before clearing data; history always preserved |
 | **100% Browser-Based** | No account, no server database — your data never leaves your browser |
+| **Standalone Backend** | Production-ready Express API deployable independently on Render |
+
+---
+
+## Repository Layout
+
+This project has two independent deployment units:
+
+| Directory | Purpose | Deploy target |
+|---|---|---|
+| `artifacts/cv-builder/` | React + Vite frontend (full monorepo) | Replit / Vercel / Netlify |
+| `artifacts/api-server/` | Express backend (monorepo, Replit-native) | Replit |
+| **`backend/`** | **Standalone Express API (zero workspace deps)** | **Render / Railway / Fly.io** |
 
 ---
 
@@ -48,17 +61,17 @@ A fully featured, browser-based CV builder with live split-screen preview, 7 pre
 | Schema Validation | [Zod](https://zod.dev) | latest |
 | Forms | [React Hook Form](https://react-hook-form.com) | 7 |
 
-### Backend — `artifacts/api-server`
+### Standalone Backend — `backend/` (Render-ready)
 
 | Category | Technology | Version |
 |---|---|---|
-| Runtime | [Node.js](https://nodejs.org) | 24 |
-| HTTP Framework | [Express](https://expressjs.com) | 5 |
-| Language | TypeScript | 5.9 |
-| AI Integration | OpenAI GPT-4o (via Replit AI proxy) | — |
+| Runtime | [Node.js](https://nodejs.org) | >=18 |
+| HTTP Framework | [Express](https://expressjs.com) | 4 |
+| Language | TypeScript | 5.8 |
+| AI Integration | [OpenAI](https://platform.openai.com) GPT-4o (standard API key) | 4 |
 | Logging | [Pino](https://getpino.io) + pino-http | 9 / 10 |
-| Bundler | [esbuild](https://esbuild.github.io) | 0.27 |
-| Schema Validation | [Zod](https://zod.dev) | latest |
+| Bundler | [esbuild](https://esbuild.github.io) | 0.25 |
+| Schema Validation | [Zod](https://zod.dev) | 3 |
 | CORS | cors | 2 |
 
 ### Monorepo / Tooling
@@ -68,20 +81,20 @@ A fully featured, browser-based CV builder with live split-screen preview, 7 pre
 | Package Manager | [pnpm](https://pnpm.io) (workspaces) | 10 |
 | Type Checking | TypeScript project references | 5.9 |
 | API Contract | OpenAPI spec → Orval codegen | — |
-| Prettier | Code formatting | 3 |
+| Formatter | Prettier | 3 |
 
 ---
 
-## Project Structure
+## Full Project Structure
 
 ```
 mahicv-ai/
 ├── artifacts/
-│   ├── cv-builder/                   # React + Vite frontend
+│   ├── cv-builder/                        # React + Vite frontend (monorepo)
 │   │   ├── index.html
 │   │   └── src/
 │   │       ├── components/
-│   │       │   ├── editor/           # One editor per CV section
+│   │       │   ├── editor/                # One editor component per CV section
 │   │       │   │   ├── PersonalEditor.tsx
 │   │       │   │   ├── ExperienceEditor.tsx
 │   │       │   │   ├── EducationEditor.tsx
@@ -91,40 +104,64 @@ mahicv-ai/
 │   │       │   │   ├── AchievementsEditor.tsx
 │   │       │   │   ├── LanguagesEditor.tsx
 │   │       │   │   └── CustomSectionsEditor.tsx
-│   │       │   ├── templates/        # 7 CV templates + dispatcher
+│   │       │   ├── templates/             # 7 CV templates + dispatcher
 │   │       │   │   └── CVPreview.tsx
-│   │       │   ├── ui/               # shadcn/ui components
+│   │       │   ├── ui/                    # shadcn/ui base components
 │   │       │   ├── AppearanceSettings.tsx
-│   │       │   ├── ConfirmDialog.tsx
-│   │       │   ├── HistoryPanel.tsx
-│   │       │   ├── ResizablePanels.tsx
+│   │       │   ├── ConfirmDialog.tsx      # Custom portal modal (no Radix)
+│   │       │   ├── HistoryPanel.tsx       # Browse & restore saved versions
+│   │       │   ├── ResizablePanels.tsx    # Custom drag-to-resize panels
 │   │       │   ├── ResumeScore.tsx
 │   │       │   ├── SectionsManager.tsx
 │   │       │   └── TemplateSelector.tsx
 │   │       ├── hooks/
-│   │       │   └── useAutoSave.ts    # Debounced auto-save to history
+│   │       │   └── useAutoSave.ts         # Debounced auto-save (2.5s) to history
 │   │       ├── pages/
-│   │       │   └── builder.tsx       # Main page (desktop + mobile layouts)
+│   │       │   └── builder.tsx            # Main page — desktop + mobile layouts
 │   │       ├── store/
-│   │       │   ├── cv-store.ts             # Zustand store (persisted to localStorage)
-│   │       │   └── cv-history-store.ts     # Version history (up to 30 snapshots)
+│   │       │   ├── cv-store.ts            # Zustand store (persisted to localStorage)
+│   │       │   └── cv-history-store.ts    # Version history store (max 30 snapshots)
 │   │       └── types/
-│   │           └── cv.ts             # All CV data types & interfaces
-│   └── api-server/                   # Express API backend
+│   │           └── cv.ts                  # All CV data types & interfaces
+│   └── api-server/                        # Express backend (Replit monorepo)
 │       └── src/
 │           ├── routes/
-│           │   ├── ai.ts             # POST /api/ai/generate-summary
-│           │   │                     # POST /api/ai/resume-score
+│           │   ├── ai.ts                  # POST /api/ai/generate-summary
+│           │   │                          # POST /api/ai/resume-score
+│           │   ├── health.ts              # GET  /api/healthz
 │           │   └── index.ts
-│           └── index.ts              # Server entry point (port 8080)
+│           ├── lib/
+│           │   └── logger.ts
+│           ├── app.ts
+│           └── index.ts                   # Entry point (reads $PORT)
+│
+├── backend/                               # Standalone backend — deploy to Render
+│   ├── src/
+│   │   ├── index.ts                       # process.env.PORT || 5000
+│   │   ├── app.ts                         # express + cors + json + / + /health
+│   │   ├── lib/
+│   │   │   ├── logger.ts                  # Pino (pretty dev / JSON prod)
+│   │   │   ├── openai.ts                  # Standard OPENAI_API_KEY client
+│   │   │   └── schemas.ts                 # All Zod schemas (inlined, no @workspace/*)
+│   │   └── routes/
+│   │       ├── index.ts
+│   │       ├── health.ts                  # GET / and GET /health
+│   │       └── ai.ts                      # POST /api/ai/generate-summary
+│   │                                      # POST /api/ai/resume-score
+│   ├── build.mjs                          # esbuild: src/index.ts → dist/index.mjs
+│   ├── package.json                       # Standalone — zero @workspace/* deps
+│   ├── tsconfig.json
+│   ├── .env.example                       # Documents all required env vars
+│   └── .gitignore
+│
 ├── lib/
-│   ├── api-zod/                      # Shared Zod request/response schemas
-│   ├── api-client-react/             # Generated TanStack Query hooks
-│   └── db/                           # Drizzle ORM schema
-├── scripts/                          # Shared utility scripts
-├── pnpm-workspace.yaml               # Workspace config + catalog versions
-├── tsconfig.base.json                # Shared TypeScript strict config
-├── package.json                      # Root scripts (build, typecheck)
+│   ├── api-zod/                           # Shared Zod schemas (monorepo only)
+│   ├── api-client-react/                  # Generated TanStack Query hooks
+│   └── db/                                # Drizzle ORM schema
+├── scripts/                               # Shared utility scripts
+├── pnpm-workspace.yaml                    # Workspace config + catalog versions
+├── tsconfig.base.json                     # Shared TypeScript strict config
+├── package.json                           # Root monorepo scripts
 └── README.md
 ```
 
@@ -146,10 +183,22 @@ mahicv-ai/
 
 ---
 
-## AI API Reference
+## API Reference
+
+All AI routes are available in both the monorepo backend (`/api/...`) and the standalone backend (`/api/...`).
+
+### `GET /`
+```json
+{ "message": "MahiCV.AI API is running", "version": "1.0.0" }
+```
+
+### `GET /health` or `GET /api/health`
+```json
+{ "status": "ok" }
+```
 
 ### `POST /api/ai/generate-summary`
-Generates a professional summary paragraph.
+Generates a professional summary paragraph using GPT-4o.
 
 **Request:**
 ```json
@@ -162,6 +211,7 @@ Generates a professional summary paragraph.
   "tone": "professional"
 }
 ```
+> `tone` options: `professional` | `creative` | `technical` | `executive`
 
 **Response:**
 ```json
@@ -173,25 +223,33 @@ Generates a professional summary paragraph.
 ---
 
 ### `POST /api/ai/resume-score`
-Scores the CV and returns structured feedback.
+Scores the CV on completeness and returns structured feedback (no AI call — instant).
 
 **Request:**
 ```json
 {
-  "cv": { /* full CV data object */ }
+  "hasPhoto": true,
+  "hasSummary": true,
+  "summaryLength": 65,
+  "skillsCount": 8,
+  "experienceCount": 3,
+  "educationCount": 1,
+  "hasProjects": true,
+  "hasCertifications": false,
+  "hasLanguages": true
 }
 ```
 
 **Response:**
 ```json
 {
-  "score": 82,
-  "grade": "B+",
-  "strengths": ["Clear work history", "Strong skills section"],
-  "improvements": ["Add quantified achievements", "Include project URLs"],
-  "summary": "Your CV is well-structured but could benefit from..."
+  "score": 85,
+  "level": "excellent",
+  "feedback": ["Professional summary present", "8 skills listed", "3 work experiences listed"],
+  "suggestions": ["Add certifications to boost credibility"]
 }
 ```
+> `level` values: `poor` | `fair` | `good` | `excellent`
 
 ---
 
@@ -212,7 +270,8 @@ Scores the CV and returns structured feedback.
 | Requirement | Minimum | Recommended |
 |---|---|---|
 | Node.js | v18 | v24 |
-| pnpm | v9 | v10 |
+| pnpm | v9 | v10 (monorepo only) |
+| npm | v8 | latest (standalone backend) |
 
 Install pnpm if you don't have it:
 ```bash
@@ -221,7 +280,7 @@ npm install -g pnpm
 
 ---
 
-## Installation & Running
+## Running Locally (Monorepo — Replit)
 
 ### 1. Clone & install
 
@@ -237,7 +296,7 @@ pnpm install
 pnpm --filter @workspace/api-server run dev
 ```
 
-Starts the backend on **port 8080**. Routes are served under `/api`.
+Starts on **port 8080**. Routes served under `/api`.
 
 ### 3. Start the frontend
 
@@ -245,50 +304,91 @@ Starts the backend on **port 8080**. Routes are served under `/api`.
 pnpm --filter @workspace/cv-builder run dev
 ```
 
-Starts the CV Builder frontend (port assigned by `$PORT` env var).
-
 ### 4. Open the app
 
-Both services run behind a shared reverse proxy:
 ```
 http://localhost:80/
 ```
 
-> Always use `localhost:80` — do not use the individual service ports directly.
+> Always access via `localhost:80` — both services run behind a shared reverse proxy.
+
+---
+
+## Running the Standalone Backend Locally
+
+```bash
+cd backend
+npm install
+npm run build
+npm start
+```
+
+Server starts on **port 5000** by default (override with `PORT` env var).
+
+```
+http://localhost:5000/
+http://localhost:5000/health
+http://localhost:5000/api/ai/generate-summary
+http://localhost:5000/api/ai/resume-score
+```
+
+---
+
+## Deploying the Standalone Backend to Render
+
+1. Push this repo to GitHub
+2. In Render, create a new **Web Service**
+3. Set **Root Directory** → `backend`
+4. Set **Build Command** → `npm install && npm run build`
+5. Set **Start Command** → `npm start`
+6. Add Environment Variables:
+
+| Variable | Value |
+|---|---|
+| `NODE_ENV` | `production` |
+| `OPENAI_API_KEY` | Your OpenAI API key |
+| `CORS_ORIGIN` | Your frontend domain (e.g. `https://mahicv.vercel.app`) |
+| `PORT` | Set automatically by Render — do not override |
+
+Render health check URL: `/health`
 
 ---
 
 ## Environment Variables
 
+### Standalone backend (`backend/`)
+
 | Variable | Required | Description |
 |---|---|---|
-| `SESSION_SECRET` | Yes | Secret key for Express session signing |
-| `PORT` | Auto | Assigned automatically per service by the proxy |
-| OpenAI key | Auto | Provided via Replit AI Integrations — no manual key needed |
+| `OPENAI_API_KEY` | Yes | Standard OpenAI API key |
+| `NODE_ENV` | No | `development` or `production` (default: development) |
+| `PORT` | No | Server port (default: 5000, set automatically on Render) |
+| `LOG_LEVEL` | No | Pino log level — `info`, `debug`, `warn`, `error` |
+| `CORS_ORIGIN` | No | Allowed frontend origin — defaults to `*` |
+
+### Monorepo backend (`artifacts/api-server`)
+
+| Variable | Required | Description |
+|---|---|---|
+| `SESSION_SECRET` | Yes | Express session signing secret |
+| `PORT` | Auto | Assigned automatically by Replit proxy |
 
 ---
 
-## Building for Production
+## Build Outputs
 
-```bash
-# Type-check the entire monorepo
-pnpm run typecheck
-
-# Build all packages
-pnpm run build
-```
-
-| Output | Location |
-|---|---|
-| Frontend (static) | `artifacts/cv-builder/dist/` |
-| Backend (bundled) | `artifacts/api-server/dist/index.mjs` |
+| Target | Command | Output |
+|---|---|---|
+| Standalone backend | `npm run build` (inside `backend/`) | `backend/dist/index.mjs` |
+| Monorepo frontend | `pnpm --filter @workspace/cv-builder run build` | `artifacts/cv-builder/dist/` |
+| Monorepo backend | `pnpm --filter @workspace/api-server run build` | `artifacts/api-server/dist/index.mjs` |
 
 ---
 
 ## All Dependencies at a Glance
 
 ```
-Frontend
+Frontend (artifacts/cv-builder)
 ├── react@19 + react-dom@19          Core UI
 ├── vite@7                           Dev server & bundler
 ├── tailwindcss@4                    Utility CSS
@@ -308,13 +408,13 @@ Frontend
 ├── @radix-ui/* (20+ packages)       Accessible UI primitives
 └── class-variance-authority         Component variants
 
-Backend
-├── express@5                        HTTP server
+Standalone Backend (backend/)
+├── express@4                        HTTP server
+├── openai@4                         OpenAI SDK (GPT-4o)
 ├── pino@9 + pino-http@10            Structured JSON logging
 ├── cors@2                           CORS headers
-├── cookie-parser@1                  Cookie handling
-├── zod                              Request/response validation
-└── esbuild@0.27                     Fast TS/JS bundler
+├── zod@3                            Request/response validation
+└── esbuild@0.25                     Fast TS/JS bundler (build-time only)
 ```
 
 ---
