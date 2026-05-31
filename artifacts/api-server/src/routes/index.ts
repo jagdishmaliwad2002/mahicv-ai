@@ -1,10 +1,11 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import healthRouter from "./health";
 import aiRouter from "./ai";
 
-const router: IRouter = Router();
+const router = Router();
 
-router.use(healthRouter);
-router.use(aiRouter);
+// ✅ EXPLICIT PATHS (NO CONFUSION)
+router.use("/health", healthRouter);
+router.use("/ai", aiRouter);
 
 export default router;

@@ -1,14 +1,24 @@
 import { Router } from "express";
-import { openai } from "../lib/openai.js";
+import Groq from "groq-sdk";
 import { GenerateSummaryBody, GetResumeScoreBody } from "../lib/schemas.js";
 
 const router = Router();
 
+// ✅ Groq instance
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+// =====================
+// 🔥 AI GENERATE SUMMARY
+// =====================
 router.post("/ai/generate-summary", async (req, res) => {
   const parsed = GenerateSummaryBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() });
-    return;
+    return res.status(400).json({
+      error: "Invalid request body",
+      details: parsed.error.flatten(),
+    });
   }
 
   const {
@@ -32,25 +42,36 @@ Tone: ${tone}
 Write 2-3 sentences (50-80 words) in first-person. Be specific, confident, and results-oriented. Do not use clichés like "passionate", "detail-oriented", or "team player". Return only the summary text with no extra commentary.`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_tokens: 200,
-      messages: [{ role: "user", content: prompt }],
+    const response = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
     });
 
-    const summary = response.choices[0]?.message?.content?.trim() ?? "";
-    res.json({ summary });
+    const summary =
+      response.choices?.[0]?.message?.content?.trim() || "";
+
+    return res.json({ summary });
   } catch (err) {
     console.error("Failed to generate summary:", err);
-    res.status(500).json({ error: "Failed to generate summary" });
+    return res.status(500).json({ error: "Failed to generate summary" });
   }
 });
 
+// =====================
+// 📊 RESUME SCORE
+// =====================
 router.post("/ai/resume-score", async (req, res) => {
   const parsed = GetResumeScoreBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() });
-    return;
+    return res.status(400).json({
+      error: "Invalid request body",
+      details: parsed.error.flatten(),
+    });
   }
 
   const {
@@ -132,7 +153,7 @@ router.post("/ai/resume-score", async (req, res) => {
   else if (score >= 40) level = "fair";
   else level = "poor";
 
-  res.json({ score, level, feedback, suggestions });
+  return res.json({ score, level, feedback, suggestions });
 });
 
 export default router;
